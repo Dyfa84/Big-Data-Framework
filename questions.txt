@@ -62,10 +62,19 @@ HAVING count(DISTINCT product) = (SELECT count(DISTINCT product) FROM orders);
 
 
 
-Lab dbt
+Lab dbt -----------
 
 Q1. The bronze CSV files are left untouched. What is the benefit when a bug is found in a transformation, six months later?
 The raw data is still intact, so I can fix the transformation and rebuild the silver layer from the original data. Nothing is lost, and the raw source stays available for audit.
 
+
 Q2. The source reads the whole file on every query. Which other format and layout would you choose if the orders were ingested every hour for years?
 Parquet files partitioned by date, for example bronze/orders/year=2026/month=10/day=21/hour=14.parquet. Parquet is compressed and columnar, so queries read only the columns they need. Partitioning lets queries read only the relevant time range, and each hourly load adds a new file without rewriting old ones.
+
+
+Q3. The silver models are views. What happens when a view is queried, and when is it preferable to a table?
+A view stores only the SQL query, so it is re-executed on every read. It is preferable when the data is small or the query is cheap, when results must always be fresh, and when you want no extra storage.
+
+
+Q4. UUID values are stored in 16 bytes. How many bytes does the VARCHAR representation use?
+36 bytes (32 hex characters + 4 hyphens), more than twice the 16 bytes of the UUID type.
