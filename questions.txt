@@ -85,3 +85,16 @@ Age: replace invalid birthdates with NULL (or exclude them), since wrong ages sk
 
 Q6. Which test would detect random state/zip combinations, and which reference data?
 A relationships test (or singular test) checking each state/zip pair against a reference table of valid ZIP ranges per state, e.g. a USPS/Census ZIP-to-state mapping loaded as a dbt seed.
+=== Lab dbt: Exercise 4 ===
+
+Where should the reference data come from?
+An official source (USPS or Census ZIP-to-state mapping), not hand-written.
+
+Should it be stored as a dbt seed?
+Yes if small and stable (~60 rows): versioned in Git, loaded by dbt, usable with ref(). For large or frequently updated data, use a managed source table instead.
+
+Should the validation happen in the silver layer?
+As a test on silver, not as a filter: silver stays complete and the issue is visible. Rejecting or nulling rows is a separate choice (as with birthdates).
+
+What happens when the reference data changes?
+Update the seed CSV, commit, run dbt seed then dbt build; tests re-run on the new rules. Git history keeps the old versions.
