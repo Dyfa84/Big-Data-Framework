@@ -78,3 +78,10 @@ A view stores only the SQL query, so it is re-executed on every read. It is pref
 
 Q4. UUID values are stored in 16 bytes. How many bytes does the VARCHAR representation use?
 36 bytes (32 hex characters + 4 hyphens), more than twice the 16 bytes of the UUID type.
+
+
+Q5. Which strategy for a dashboard displaying customer age? For sales per region?
+Age: replace invalid birthdates with NULL (or exclude them), since wrong ages skew the result. Sales per region: accept and monitor (warn), since birthdates are irrelevant to sales.
+
+Q6. Which test would detect random state/zip combinations, and which reference data?
+A relationships test (or singular test) checking each state/zip pair against a reference table of valid ZIP ranges per state, e.g. a USPS/Census ZIP-to-state mapping loaded as a dbt seed.
