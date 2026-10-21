@@ -11,6 +11,10 @@ models:
         description: Username without leading/trailing whitespace, in lowercase.
         data_tests:
           - not_null
+      - name: birthdate_is_valid
+        description: False when the original birthdate was after the first order (birthdate is then NULL).
+        data_tests:
+          - not_null
       - name: email
         data_tests:
           - unique
