@@ -98,3 +98,20 @@ As a test on silver, not as a filter: silver stays complete and the issue is vis
 
 What happens when the reference data changes?
 Update the seed CSV, commit, run dbt seed then dbt build; tests re-run on the new rules. Git history keeps the old versions.
+
+=== Lab dbt: Exercise 5 ===
+
+Where is the data stored?
+View: nowhere, only the SQL query is stored. Table: inside the DuckDB file (lab_medallion.duckdb).
+
+When is the transformation executed?
+View: on every query. Table: once, when dbt run/build is executed.
+
+What happens when the underlying CSV changes?
+View: the next query sees the new data. Table: stays stale until dbt is run again.
+
+Which approach requires more storage?
+Table (it stores a copy of the data).
+
+Which approach avoids re-reading the source files for every query?
+Table.
