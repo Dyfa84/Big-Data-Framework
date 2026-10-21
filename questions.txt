@@ -1,0 +1,71 @@
+duck db
+
+The persistent secret is stored in a file of your home directory. What are the risks, and why are they limited on Onyxia?
+The secret is visible to any process running as your user. How would you restrict the access to S3 for a Kubernetes Job?
+
+
+
+
+The dataset contains 50 users, each one with at least one order, and 2829 orders with unique identifiers. Why does approx_unique return 40 and 3167?
+The types are inferred from a sample of the file. Which issue may occur with a large file whose first rows are not representative?
+
+
+
+
+Q1
+SELECT
+  round(count(*) / count(DISTINCT user_uuid), 2) AS avg_orders_per_user,
+  round(avg(quantity), 2) AS avg_quantity_per_order
+FROM orders;
+
+Q2
+SELECT
+  user_uuid,
+  min(date) AS first_order,
+  max(date) AS last_order,
+  date_diff('day', min(date), max(date)) AS days_between
+FROM orders
+GROUP BY user_uuid
+ORDER BY user_uuid;
+
+Q3
+SELECT hour(date) AS hour_of_day, sum(quantity) AS quantity
+FROM orders
+GROUP BY hour_of_day
+ORDER BY quantity DESC
+LIMIT 1;
+
+Q4
+WITH monthly AS (
+  SELECT product, date_trunc('month', date) AS month, sum(quantity) AS quantity
+  FROM orders
+  GROUP BY product, month
+)
+SELECT
+  product,
+  month,
+  quantity,
+  round(
+    100 * (quantity - lag(quantity) OVER (PARTITION BY product ORDER BY month))
+    / lag(quantity) OVER (PARTITION BY product ORDER BY month),
+    1
+  ) AS variation_pct
+FROM monthly
+ORDER BY product, month;
+
+Q5
+SELECT user_uuid
+FROM orders
+GROUP BY user_uuid
+HAVING count(DISTINCT product) = (SELECT count(DISTINCT product) FROM orders);
+
+
+
+
+Lab dbt
+
+Q1. The bronze CSV files are left untouched. What is the benefit when a bug is found in a transformation, six months later?
+The raw data is still intact, so I can fix the transformation and rebuild the silver layer from the original data. Nothing is lost, and the raw source stays available for audit.
+
+Q2. The source reads the whole file on every query. Which other format and layout would you choose if the orders were ingested every hour for years?
+Parquet files partitioned by date, for example bronze/orders/year=2026/month=10/day=21/hour=14.parquet. Parquet is compressed and columnar, so queries read only the columns they need. Partitioning lets queries read only the relevant time range, and each hourly load adds a new file without rewriting old ones.
