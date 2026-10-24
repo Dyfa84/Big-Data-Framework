@@ -1,4 +1,4 @@
-duck db
+duck db===========================================
 
 The persistent secret is stored in a file of your home directory. What are the risks, and why are they limited on Onyxia?
 The secret is visible to any process running as your user. How would you restrict the access to S3 for a Kubernetes Job?
@@ -62,7 +62,7 @@ HAVING count(DISTINCT product) = (SELECT count(DISTINCT product) FROM orders);
 
 
 
-Lab dbt -----------
+Lab dbt ======================================================
 
 Q1. The bronze CSV files are left untouched. What is the benefit when a bug is found in a transformation, six months later?
 The raw data is still intact, so I can fix the transformation and rebuild the silver layer from the original data. Nothing is lost, and the raw source stays available for audit.
@@ -115,3 +115,66 @@ Table (it stores a copy of the data).
 
 Which approach avoids re-reading the source files for every query?
 Table.
+
+
+
+spark RDD ================================================================
+
+
+What decides the number of partitions textFile() picks by default, for a file this size?
+The file size split into input blocks, with a minimum of min(defaultParallelism, 2). A small file like this one gets about 2 partitions.
+
+repartition() and coalesce() both change the partition count. Which one shuffles data, and which one doesn't?
+repartition() shuffles (it can increase or decrease the count). coalesce() does not shuffle by default: it merges existing partitions, so it can only decrease the count.
+
+
+=== Lab RDD: Lazy evaluation and lineage ===
+
+Does a second orders_data.count() create a new stage in the Spark UI? Why?
+Yes. Nothing is cached, so Spark replays the whole lineage and rereads the file.
+
+At which point would .cache() change that answer?
+Calling it on orders_data before the first count(): the second count would then read from memory.
+
+=== Lab RDD: The multiline address ===
+
+Why does spark.read.csv(multiLine=True) not have this problem, while sc.textFile() does?
+The CSV parser tracks quoted fields, so a newline inside quotes does not end a record. textFile() splits blindly on every newline.
+
+What must be true of a file format for a line-oriented reader to be safe?
+Every record must sit on exactly one line, with no embedded newlines (e.g. JSON Lines).
+
+=== Lab RDD: Manual parsing of orders ===
+
+What happens if one line has an extra comma inside product?
+split(",") returns six values, so the unpacking raises a ValueError and the job fails at the first action that reaches that line.
+
+Where does the DataFrame API perform the equivalent check, and when?
+In the CSV reader, against the schema, when the data is read. Its parse mode (PERMISSIVE, DROPMALFORMED, FAILFAST) decides what happens to bad rows.
+
+=== Lab RDD: Key-value RDDs ===
+
+What does groupByKey shuffle, and why is it more expensive?
+Every raw (key, value) pair, with no combining beforehand. reduceByKey pre-aggregates per partition, so far less data crosses the network.
+
+For which aggregations is groupByKey unavoidable?
+Those needing all values of a key at once and not decomposable into a combiner, such as a median or percentile.
+
+=== Lab RDD: Manual deduplication ===
+
+What plays the role of partitionBy() here?
+The shuffle of reduceByKey, which hash-partitions by order_id so equal keys meet on the same partition.
+
+Which version states the intent more directly?
+The window function: it declares "latest row per order_id", whereas reduceByKey spells out the mechanics.
+
+=== Lab RDD: Joining orders with users ===
+
+What must be true of the partitioning for Spark to skip the shuffle?
+Both RDDs must be co-partitioned: same partitioner and same number of partitions, so matching keys already share a partition.
+
+What changes with leftOuterJoin() if a user_id has no matching user?
+The order is kept, paired with None instead of a username. join() would drop it.
+
+What is the risk of calling .collect() on a much larger enriched?
+It pulls the whole dataset into the driver's memory, which can cause an out-of-memory crash. Use take(), aggregate first, or write to storage.
