@@ -178,3 +178,56 @@ The order is kept, paired with None instead of a username. join() would drop it.
 
 What is the risk of calling .collect() on a much larger enriched?
 It pulls the whole dataset into the driver's memory, which can cause an out-of-memory crash. Use take(), aggregate first, or write to storage.
+
+
+
+
+=== Lab Spark DataFrames (short answers) ===
+
+Credentials are temporary: what happens to a running job if the service restarts?
+It fails. The credentials die with the session.
+
+Why does SimpleAWSCredentialsProvider fail?
+It ignores the session token, so the store returns 403.
+
+Explain the output of the code that was just run.
+Both methods give the same deduplicated orders. The state table shows military addresses have no city.
+
+DataFrame or SQL?
+SQL for quick exploration, DataFrame for shared, reusable code.
+
+Where else could regexp_extract() returning "" cause a wrong result?
+On state and zip_code: "" would be counted as a value instead of NULL.
+
+How many part-files under users.parquet/, and why?
+One: the dataset is tiny, so there is one partition.
+
+What do you lose with coalesce(1)?
+Parallelism: one task writes everything, which is slow at scale.
+
+Which files hold the data, and which describe the table?
+data/ holds the data. metadata/ describes the table.
+
+What does a reader see if a job overwrites the data during a query?
+Parquet: broken or mixed data. Iceberg: a consistent snapshot.
+
+What can go wrong if two jobs commit at once?
+One can overwrite the other. A catalog makes the commit atomic.
+
+What differs between the two schemas?
+Spark has strings instead of UUID, and no time zone on timestamps. Consumers must cast.
+
+One object per model or a directory of part-files?
+One object is easier to read. A directory scales better.
+
+What did this lab use instead of dbt tests?
+Only row-count assertions. Real checks must be written by hand.
+
+What plays the role of ref() and source()?
+Nothing: cell order and Python variables.
+
+Why are build times not comparable?
+Spark includes startup and setup overhead, which dominates on tiny data.
+
+dbt with DuckDB or Spark?
+10 GB: dbt with DuckDB. 10 TB: Spark. SQL-only team: dbt with DuckDB.
